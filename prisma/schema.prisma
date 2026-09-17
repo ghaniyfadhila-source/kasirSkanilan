@@ -1,0 +1,148 @@
+// Prisma Schema for Sistem Kasir Cashless RFID
+// Generated from PRD requirements
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["transactionApi"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User (Kasir, Admin, Supervisor)
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String    // hashed
+  role          Role      @default(KASIR)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  transactions  Transaction[] @relation("CashierTransactions")
+  topups        Topup[]   @relation("AdminTopups")
+}
+
+enum Role {
+  KASIR
+  ADMIN
+  SUPERVISOR
+}
+
+// Student (Cardholder)
+model Student {
+  id            String    @id @default(cuid())
+  nis           String    @unique
+  name          String
+  photoUrl      String?
+  uid           String    @unique // RFID UID
+  balance       Int       @default(0) // dalam rupiah (integer)
+  isActive      Boolean   @default(true)
+  isBlocked     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  transactions  Transaction[]
+  topups        Topup[]
+  mutations     MutationLog[]
+}
+
+// Product Catalog
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique // Makanan, Minuman, ATK
+  products  Product[]
+}
+
+model Outlet {
+  id        String    @id @default(cuid())
+  name      String    @unique // SMART_CAFE, BUSINESS_CENTER
+  products  Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int      // rupiah integer
+  stock       Int      @default(0)
+  imageUrl    String?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  outletId    String
+  outlet      Outlet   @relation(fields: [outletId], references: [id])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       TransactionItem[]
+}
+
+// Transactions
+model Transaction {
+  id              String    @id @default(cuid())
+  studentId       String
+  student         Student   @relation(fields: [studentId], references: [id])
+  cashierId       String
+  cashier         User      @relation("CashierTransactions", fields: [cashierId], references: [id])
+  totalAmount     Int
+  status          TxnStatus @default(SUCCESS)
+  paymentMethod   String    @default("RFID")
+  createdAt       DateTime  @default(now())
+  items           TransactionItem[]
+}
+
+enum TxnStatus {
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model TransactionItem {
+  id            String  @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product @relation(fields: [productId], references: [id])
+  quantity      Int
+  priceAtTime   Int     // snapshot harga saat transaksi
+  subtotal      Int
+}
+
+// Top-up
+model Topup {
+  id        String    @id @default(cuid())
+  studentId String
+  student   Student   @relation(fields: [studentId], references: [id])
+  adminId   String
+  admin     User      @relation("AdminTopups", fields: [adminId], references: [id])
+  amount    Int
+  method    String    @default("CASH") // CASH, TRANSFER
+  createdAt DateTime  @default(now())
+}
+
+// Mutation Log (Audit Trail)
+model MutationLog {
+  id            String      @id @default(cuid())
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type          MutType
+  amount        Int         // positif untuk topup, negatif untuk debit
+  balanceBefore Int
+  balanceAfter  Int
+  referenceId   String?     // Transaction.id atau Topup.id
+  referenceType RefType?
+  createdAt     DateTime    @default(now())
+  createdBy     String?     // User.id yang melakukan aksi
+}
+
+enum MutType {
+  TOPUP
+  DEBIT
+  REFUND
+}
+
+enum RefType {
+  TRANSACTION
+  TOPUP
+}
+
+
