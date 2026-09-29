@@ -88,11 +88,11 @@ Alat pembaca RFID membaca *Unique Identifier* (UID) dari kartu siswa, lalu mengi
 
 ## 📡 Panduan Firmware IoT
 
-Repository ini menyediakan firmware siap pakai di dalam folder `modulFlash/` yang mendukung 3 varian arsitektur hardware:
+Repository ini menyediakan firmware siap pakai di dalam folder [`modulFlash`](/modulflash) yang mendukung 3 varian arsitektur hardware:
 
-1. **ESP32 Dev Module** (`modulFlash/ESP/ESP32/`)
-2. **NodeMCU V3 ESP8266** (`modulFlash/ESP/ESP8266/`)
-3. **ATmega328P + ESP8266 Combo Board** (`modulFlash/ATmega/`) — menggunakan komunikasi serial inter-chip.
+1. [**ESP32 Dev Module**](modulFlash/ESP/ESP32/)
+2. [**NodeMCU V3 ESP8266**](modulFlash/ESP/ESP8266/)
+3. [**ATmega328P + ESP8266 Combo Board**](modulFlash/ATmega/) — menggunakan komunikasi serial inter-chip.
 
 ### 🔌 Komponen lain
 - Modul RFID: **MFRC522** (13.56 MHz)
@@ -110,9 +110,9 @@ Repository ini menyediakan firmware siap pakai di dalam folder `modulFlash/` yan
 
 2. **Buka File Program**
    Pilih sketch `.ino` yang sesuai dengan board Anda:
-   - **ESP32:** `modulFlash/ESP/ESP32/ESP32.ino`
-   - **ESP8266:** `modulFlash/ESP/ESP8266/ESP8266.ino`
-   - **ATmega Combo:** `modulFlash/ATmega/ATmega328P/` & `ESP8266WIFI/`
+   - [**ESP32:**](modulFlash/ESP/ESP32/ESP32.ino)
+   - [**ESP8266:**](modulFlash/ESP/ESP8266/ESP8266.ino)
+   - **ATmega Combo:** [1](src/modulFlash/ATmega/ESP8266WIFI/ESP8266WIFI.ino) & [2](modulFlash/ATmega/ATmega328P/ATmega328P.ino)
 
 3. **Sesuaikan Konfigurasi Jaringan & Server**
    Di bagian atas kode, isi data WiFi (wajib **2.4 GHz**) dan endpoint IP server web kasir Anda:
