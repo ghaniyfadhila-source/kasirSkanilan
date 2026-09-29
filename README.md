@@ -31,19 +31,20 @@ Sistem Point of Sale (POS) dan manajemen uang elektronik (Cashless) khusus untuk
 - **Autentikasi:** NextAuth.js
 
 ### Hardware (Alat Pembaca)
-- Mikrokontroler: **ESP32 / NodeMCU**
-- Modul RFID: **Mifare RC522** (Atau modul 13.56MHz sejenis)
+- Mikrokontroler: **ESP32 / NodeMCU (ESP8266) / ATmega328P Combo**
+- Modul RFID: **Mifare RC522** (13.56 MHz)
+- Display & Indikator: **LCD 16x2 (I2C)** & **Buzzer**
 
 ---
 
 ## 🏗️ Arsitektur Sistem Singkat
 
 Sistem menggunakan topologi Client-Server di jaringan lokal (LAN/WLAN) sekolah. 
-Alat pembaca RFID (ESP32) membaca *Unique Identifier* (UID) dari kartu siswa, lalu mengirimkannya via HTTP POST *request* ke API Next.js. Next.js akan mengecek ke database MySQL, memvalidasi saldo, dan mengembalikan data profil siswa ke layar komputer kasir.
+Alat pembaca RFID membaca *Unique Identifier* (UID) dari kartu siswa, lalu mengirimkannya via HTTP GET/POST *request* ke API Next.js. Server akan memvalidasi data ke database MySQL, mengecek saldo, dan menyinkronkan status transaksi secara instan ke antarmuka kasir.
 
 ---
 
-## 🚀 Panduan Instalasi (Development)
+## 🚀 Panduan Instalasi
 
 ### Persyaratan Sistem
 - [Node.js](https://nodejs.org/) (versi 18 atau lebih baru)
@@ -64,29 +65,67 @@ Alat pembaca RFID (ESP32) membaca *Unique Identifier* (UID) dari kartu siswa, la
    ```
 
 3. **Konfigurasi Database**
-   - Buat database baru di MySQL (misal: `db_kasir_sekolah`)
+   - Buat database baru di MySQL (misal: `db_kasircashless`)
    - Copy file `.env.example` menjadi `.env`
    - Sesuaikan konfigurasi database URL di dalam `.env`:
      ```env
-     DATABASE_URL="mysql://root:password@localhost:3306/db_kasir_sekolah"
+     DATABASE_URL="mysql://root:@localhost:3306/db_kasircashless"
      ```
 
 4. **Migrasi Schema Database (Prisma)**
    ```bash
-   npx prisma migrate dev --name init
+   npx prisma db push
    ```
 
-5. **Jalankan Seed (Opsional - untuk data dummy)**
-   ```bash
-   npm run seed
-   ```
-
-6. **Jalankan Development Server**
+5. **Jalankan Development Server**
    ```bash
    npm run dev
    ```
 
-7. Buka browser dan akses: `http://localhost:3000`
+6. Buka browser dan akses: `http://localhost:3000`
+
+---
+
+## 📡 Panduan Firmware IoT
+
+Repository ini menyediakan firmware siap pakai di dalam folder `modulFlash/` yang mendukung 3 varian arsitektur hardware:
+
+1. **ESP32 Dev Module** (`modulFlash/ESP/ESP32/`)
+2. **NodeMCU V3 ESP8266** (`modulFlash/ESP/ESP8266/`)
+3. **ATmega328P + ESP8266 Combo Board** (`modulFlash/ATmega/`) — menggunakan komunikasi serial inter-chip.
+
+### 🔌 Komponen lain
+- Modul RFID: **MFRC522** (13.56 MHz)
+- Layar Display: **LCD 16x2 + I2C Backpack**
+- Indikator Suara: **Active Buzzer**
+
+---
+
+### ⚡ Flashing
+
+1. **Siapkan Library di Arduino IDE**
+   Buka *Library Manager* (`Ctrl + Shift + I`) dan pasang library berikut:
+   - `MFRC522` by GithubCommunity
+   - `LiquidCrystal_I2C` by Frank de Brabander
+
+2. **Buka File Program**
+   Pilih sketch `.ino` yang sesuai dengan board Anda:
+   - **ESP32:** `modulFlash/ESP/ESP32/ESP32.ino`
+   - **ESP8266:** `modulFlash/ESP/ESP8266/ESP8266.ino`
+   - **ATmega Combo:** `modulFlash/ATmega/ATmega328P/` & `ESP8266WIFI/`
+
+3. **Sesuaikan Konfigurasi Jaringan & Server**
+   Di bagian atas kode, isi data WiFi (wajib **2.4 GHz**) dan endpoint IP server web kasir Anda:
+   ```cpp
+   const char* ssid     = "Nama_WiFi_2.4GHz";
+   const char* password = "Password_WiFi";
+   const String serverUrl = "http://<IP_KOMPUTER_KASIR>:3000/api/rfid?rfid=";
+   ```
+
+4. **Wiring & Upload**
+   - Panduan pinout lengkap untuk masing-masing board sudah tertulis di baris komentar atas setiap file program.
+   - Pilih jenis Board dan Port COM yang sesuai di Arduino IDE, lalu klik **Upload** (`Ctrl + U`).
+   - Setelah selesai, tap kartu RFID untuk mulai memproses transaksi ke web kasir.
 
 ---
 
